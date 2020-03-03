@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/Code/C/KTV/main.cpp
+iostream
+-
+stdio.h
+-
+stdlib.h
+-
+string
+-
+string.h
+-
+fstream
+-
+

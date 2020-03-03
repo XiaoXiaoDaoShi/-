@@ -1,0 +1,15 @@
+create table image
+(studentId varchar(20)
+)
+declare @num int
+declare @C varchar(10)
+declare @sql varchar(50)
+set @num=1
+while @num<=128
+	begin 
+		set @C = '[' + cast(@num as varchar(3)) + ']'
+		set @sql = 'alter table image add ' + @C + ' float not null'
+		exec(@sql)
+		set @num = @num+1
+		print @sql
+	end

@@ -1,0 +1,152 @@
+package Administration;
+
+import java.awt.image.BufferedImage;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfRect;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.CascadeClassifier;
+import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
+
+import OsTools.tfutil;
+
+public class CameraAdmin extends Thread{
+	private boolean isShot = false;
+	private JLabel imageLabel;
+	private Mat faceImage = new Mat();
+	
+	
+	static {
+		//在使用OpenCV前必须加载Core.NATIVE_LIBRARY_NAME类,否则会报错
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+	}
+	
+	
+	
+	public CameraAdmin(JLabel imageLabel, Mat faceImage) {
+		super();
+		this.imageLabel = imageLabel;
+		this.faceImage = faceImage;
+	}
+
+
+	public CameraAdmin(JLabel imageLabel) {
+		super();
+		this.imageLabel = imageLabel;
+	}
+
+
+	public CameraAdmin(boolean isShot, JLabel imageLabel) {
+		super();
+		this.isShot = isShot;
+		this.imageLabel = imageLabel;
+	}
+	
+	public Mat getFaceImage() {
+		return faceImage;
+	}
+
+	public void synchronizedgetFaceImage(){
+		CascadeClassifier facebook = new CascadeClassifier("data/haarcascade_frontalface_alt2.xml");
+		MatOfRect face = new MatOfRect();
+		VideoCapture capture = new VideoCapture(0);
+		capture.set(Videoio.CAP_PROP_FRAME_WIDTH,600);
+        capture.set(Videoio.CAP_PROP_FRAME_HEIGHT,600);
+        Mat image = new Mat();
+//		Mat faceImage = new Mat();
+		Mat newImage = new Mat();
+		int index=0;
+		BufferedImage bImage ;
+		
+		if(capture.isOpened()) {
+			while(true) {
+				capture.read(image);
+				if(isShot) {
+					continue;
+				}			
+				if (!image.empty()) {
+					facebook.detectMultiScale(image, face);
+					ImageIcon imageIcon = new ImageIcon();
+					Rect[] rects = face.toArray();
+					if(rects.length>0) {
+						newImage = select(image, rects);
+						Imgproc.rectangle(image,new Point(rects[0].x-20, rects[0].y-20), new Point(rects[0].x + rects[0].width+40, rects[0].y + rects[0].height + 40), new Scalar(0,255,0));										
+						bImage = matToBufferedImage(image);
+						imageIcon.setImage(bImage);
+						imageLabel.setIcon(imageIcon);
+						faceImage = tfutil.resizeImage(newImage);
+							
+					}
+					else {
+						bImage = matToBufferedImage(image);
+						imageIcon.setImage(bImage);
+						imageLabel.setIcon(imageIcon);
+					}
+				}
+			}
+		}
+	}
+	
+	
+	public static BufferedImage matToBufferedImage(Mat imageMat) {  //mat to bufferedimage
+		int cols = imageMat.cols();
+		int rows = imageMat.rows();
+		int elemSize = (int) imageMat.elemSize();
+		byte[] data = new byte[cols * rows * elemSize];
+		int type;
+		imageMat.get(0, 0, data);
+		switch(imageMat.channels()) {
+		case 1:
+			type = BufferedImage.TYPE_BYTE_GRAY;
+			break;
+		case 3:
+			type = BufferedImage.TYPE_3BYTE_BGR;
+			// BGR to RGB
+			byte b;
+			for(int i=0; i<data.length; i=i+3) {
+				b = data[i];
+				data[i] = data[i + 2];
+				data[i+2] = b;
+			}
+			break;
+			default:
+				return null;
+		}
+		BufferedImage image2 = new BufferedImage(cols, rows, type);
+		image2.getRaster().setDataElements(0, 0, cols, rows, data);
+		return image2;
+		
+	}
+	
+	public static Mat select(Mat image, Rect[] rects) {
+		Mat sub = new Mat();
+		for(int i = 0 ; i < rects.length ; i++){
+			Rect rect = rects[i];
+			sub = image.submat(rects[i]);   //Mat sub = new Mat(image,rect);
+			
+		}
+		return sub;
+	}
+	
+	public void run() {
+		synchronizedgetFaceImage();
+	}
+	
+	 public void callWait() {
+	        isShot = true;
+	    }
+	 
+    public void call() {
+        isShot = false;
+  
+    }
+}
